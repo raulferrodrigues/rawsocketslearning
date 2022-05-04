@@ -12,9 +12,11 @@
 #include "raw.h"
 
 char this_mac[6];
-char bcast_mac[6] =	{0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
-char dst_mac[6] =	{0x00, 0x00, 0x00, 0x22, 0x22, 0x22};
-char src_mac[6] =	{0x00, 0x00, 0x00, 0x33, 0x33, 0x33};
+char bcast_mac[6] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+char dst_mac[6] = {0x00, 0x00, 0x00, 0x22, 0x22, 0x22};
+char src_mac[6] = {0x00, 0x00, 0x00, 0x33, 0x33, 0x33};
+
+// samsung s8+ mac: 00:90:4c:99:05:71
 
 int main(int argc, char *argv[])
 {
@@ -22,7 +24,7 @@ int main(int argc, char *argv[])
 	char ifName[IFNAMSIZ];
 	struct sockaddr_ll socket_address;
 	int sockfd, numbytes, size = 100;
-	
+
 	uint8_t raw_buffer[ETH_LEN];
 	struct eth_frame_s *raw = (struct eth_frame_s *)&raw_buffer;
 
@@ -37,14 +39,14 @@ int main(int argc, char *argv[])
 		perror("socket");
 
 	/* Set interface to promiscuous mode */
-	strncpy(ifopts.ifr_name, ifName, IFNAMSIZ-1);
+	strncpy(ifopts.ifr_name, ifName, IFNAMSIZ - 1);
 	ioctl(sockfd, SIOCGIFFLAGS, &ifopts);
 	ifopts.ifr_flags |= IFF_PROMISC;
 	ioctl(sockfd, SIOCSIFFLAGS, &ifopts);
 
 	/* Get the index of the interface */
 	memset(&if_idx, 0, sizeof(struct ifreq));
-	strncpy(if_idx.ifr_name, ifName, IFNAMSIZ-1);
+	strncpy(if_idx.ifr_name, ifName, IFNAMSIZ - 1);
 	if (ioctl(sockfd, SIOCGIFINDEX, &if_idx) < 0)
 		perror("SIOCGIFINDEX");
 	socket_address.sll_ifindex = if_idx.ifr_ifindex;
@@ -52,30 +54,29 @@ int main(int argc, char *argv[])
 
 	/* Get the MAC address of the interface */
 	memset(&if_mac, 0, sizeof(struct ifreq));
-	strncpy(if_mac.ifr_name, ifName, IFNAMSIZ-1);
+	strncpy(if_mac.ifr_name, ifName, IFNAMSIZ - 1);
 	if (ioctl(sockfd, SIOCGIFHWADDR, &if_mac) < 0)
 		perror("SIOCGIFHWADDR");
 	memcpy(this_mac, if_mac.ifr_hwaddr.sa_data, 6);
 
 	/* End of configuration. Now we can send data using raw sockets. */
 
-
 	/* To send data (in this case we will cook an ARP packet and broadcast it =])... */
 
 	/* fill the Ethernet frame header */
 	memcpy(raw->ethernet.dst_addr, bcast_mac, 6);
 	memcpy(raw->ethernet.src_addr, src_mac, 6);
-	raw->ethernet.eth_type = htons(ETH_P_IP);
+	raw->ethernet.eth_type = htons(ETHER_TYPE);
 
 	/* Fill IP header data. Fill all fields and a zeroed CRC field, then update the CRC! */
-	raw->ip.ver = 0x45;
-	raw->ip.tos = 0x00;
-	raw->ip.len = htons(size + sizeof(struct ip_hdr_s));
-	raw->ip.id = htons(0x00);
-	raw->ip.off = htons(0x00);
-	raw->ip.ttl = 50;
-	raw->ip.proto = 0xff;
-	raw->ip.sum = htons(0x0000);
+	// raw->ip.ver = 0x45;
+	// raw->ip.tos = 0x00;
+	// raw->ip.len = htons(size + sizeof(struct ip_hdr_s));
+	// raw->ip.id = htons(0x00);
+	// raw->ip.off = htons(0x00);
+	// raw->ip.ttl = 50;
+	// raw->ip.proto = 0xff;
+	// raw->ip.sum = htons(0x0000);
 
 	/* fill source and destination addresses */
 
@@ -84,12 +85,10 @@ int main(int argc, char *argv[])
 
 	/* fill payload data */
 
-
 	/* Send it.. */
 	memcpy(socket_address.sll_addr, dst_mac, 6);
-	if (sendto(sockfd, raw_buffer, sizeof(struct eth_hdr_s) + sizeof(struct ip_hdr_s) + size, 0, (struct sockaddr*)&socket_address, sizeof(struct sockaddr_ll)) < 0)
+	if (sendto(sockfd, raw_buffer, sizeof(struct eth_hdr_s) + sizeof(struct miguel_xavier_protocol) + size, 0, (struct sockaddr *)&socket_address, sizeof(struct sockaddr_ll)) < 0)
 		printf("Send failed\n");
-
 
 	return 0;
 }
