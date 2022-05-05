@@ -2,7 +2,10 @@
 
 #define ETH_LEN 1518
 #define ETHER_TYPE 0x8888
-#define DEFAULT_IF "enp5s0"
+#define DEFAULT_IF "ens33"
+
+#define NAME_SIZE 8
+#define PAYLOAD_SIZE 32
 
 enum mtype
 {
@@ -11,11 +14,12 @@ enum mtype
 	TALK
 };
 
-struct miguel_xavier_protocol
+struct mxp_packet
 {
 	enum mtype type;
-	char dst_name[32];
-	char payload[32];
+	char src_name[NAME_SIZE];
+	char dst_name[NAME_SIZE];
+	char payload[PAYLOAD_SIZE];
 };
 
 struct eth_hdr_s
@@ -27,7 +31,13 @@ struct eth_hdr_s
 
 struct eth_frame_s
 {
-	char src[4];
 	struct eth_hdr_s ethernet;
-	struct miguel_xavier_protocol packet;
+	struct mxp_packet packet;
+};
+
+struct host_ttl
+{
+	char hostname[NAME_SIZE];
+	char mac[6];
+	int ttl;
 };
