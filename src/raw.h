@@ -35,9 +35,9 @@ struct eth_frame_s
 	struct mxp_packet packet;
 };
 
-struct host_ttl
+typedef struct
 {
 	char hostname[NAME_SIZE];
 	char mac[6];
 	int ttl;
-};
+} host_ttl;
