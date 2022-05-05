@@ -16,7 +16,7 @@
 #include "pthread.h"
 
 #define HOST_LIMIT 50
-#define HEARTBEAT_TICK 5
+#define HEARTBEAT_TICK 10
 #define TTL_TICK 1
 #define TTL_RESET 15
 
@@ -32,6 +32,8 @@ char bcast_mac[6] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
 char ifName[IFNAMSIZ];
 
 sem_t mutex;
+sem_t data_hold;
+
 host_ttl connected_hosts[HOST_LIMIT];
 
 void print_connected_hosts()
@@ -242,14 +244,14 @@ int sendRaw(enum mtype type, char *dest, char *data)
 
   /* fill the Ethernet frame header */
   char dest_mac[6];
-  memcpy(dest_mac, get_host_mac(dest), 6);
+  memcpy(dest_mac, bcast_mac, 6);
   memcpy(raw->ethernet.dst_addr, dest_mac, 6);
   memcpy(raw->ethernet.src_addr, this_mac, 6);
   raw->ethernet.eth_type = htons(ETHER_TYPE);
 
   /* fill mxp data */
   raw->packet.type = type;
-  strncpy(raw->packet.src_name, this_name, 3);
+  memcpy(raw->packet.src_name, this_name, NAME_SIZE);
   memset(raw->packet.payload, 0, PAYLOAD_SIZE);
   if (data != NULL)
     memcpy(raw->packet.payload, data, PAYLOAD_SIZE);
@@ -345,16 +347,16 @@ int main(int argc, char *argv[])
 
   while (1)
   {
-    system("clear");
-
-    memset(dest, '\0', sizeof(dest));
-    memset(data, '\0', sizeof(data));
+    memset(dest, '\0', NAME_SIZE);
+    memset(data, '\0', PAYLOAD_SIZE);
 
     printf("Destination: ");
     scanf("%7s", dest);
 
     printf("Payload: ");
     scanf("%31s", data);
+
+    printf("data is is being sent: %s\n", data);
 
     sendTalk(dest, data);
     printf("Sent!\n\n");
