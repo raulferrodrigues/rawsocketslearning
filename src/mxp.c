@@ -14,7 +14,7 @@
 #include "pthread.h"
 
 #define HOST_LIMIT 50
-#define HEARTBEAT_TICK 1
+#define HEARTBEAT_TICK 10
 #define TTL_TICK 1
 #define TTL_RESET 15
 
